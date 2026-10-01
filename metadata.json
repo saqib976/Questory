@@ -1,0 +1,8 @@
+{
+  "name": "Saqib\u0027s Portfolio",
+  "description": "High-retention video editor portfolio featuring specialized long-form documentaries and vertical short-form viral reels showcases.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
