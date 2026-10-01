@@ -8,7 +8,7 @@ interface LongFormPortfolioProps {
   onSwitchToVertical: () => void;
 }
 
-type CategoryType = 'all' | 'faceless' | 'motion-graphics' | 'retention' | 'podcasts' | 'commercial';
+type CategoryType = 'all' | 'faceless' | 'motion-graphics' | 'talking-head';
 
 export const LongFormPortfolio: React.FC<LongFormPortfolioProps> = ({
   onSelectProject,
@@ -20,9 +20,7 @@ export const LongFormPortfolio: React.FC<LongFormPortfolioProps> = ({
     { id: 'all', label: 'All Projects', count: LONG_FORM_PROJECTS.length },
     { id: 'faceless', label: 'Faceless & Documentaries', count: LONG_FORM_PROJECTS.filter(p => p.category === 'faceless').length },
     { id: 'motion-graphics', label: 'Motion Graphics & VFX', count: LONG_FORM_PROJECTS.filter(p => p.category === 'motion-graphics').length },
-    { id: 'retention', label: 'YouTube Retention', count: LONG_FORM_PROJECTS.filter(p => p.category === 'retention').length },
-    { id: 'podcasts', label: 'Podcasts & Talking Heads', count: LONG_FORM_PROJECTS.filter(p => p.category === 'podcasts').length },
-    { id: 'commercial', label: 'Commercial & Brand', count: LONG_FORM_PROJECTS.filter(p => p.category === 'commercial').length },
+    { id: 'talking-head', label: 'Talking Head & Interviews', count: LONG_FORM_PROJECTS.filter(p => p.category === 'talking-head').length },
   ];
 
   const filteredProjects = selectedCategory === 'all'
@@ -111,6 +109,11 @@ export const LongFormPortfolio: React.FC<LongFormPortfolioProps> = ({
                 src={project.thumbnail}
                 alt={project.title}
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  if (project.thumbnail.includes('maxresdefault.jpg')) {
+                    e.currentTarget.src = project.thumbnail.replace('maxresdefault.jpg', 'hqdefault.jpg');
+                  }
+                }}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
 

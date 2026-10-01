@@ -5,15 +5,26 @@ import { triggerHaptic } from '../utils/haptics.ts';
 interface HeaderProps {
   onOpenContact: () => void;
   onScrollToSection: (id: string) => void;
+  onSwitchTab?: (tab: 'long' | 'vertical') => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenContact, onScrollToSection }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenContact, onScrollToSection, onSwitchTab }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavClick = (sectionId: string) => {
     triggerHaptic('light');
     setMobileMenuOpen(false);
     onScrollToSection(sectionId);
+  };
+
+  const handleTabClick = (tab: 'long' | 'vertical') => {
+    triggerHaptic('light');
+    setMobileMenuOpen(false);
+    if (onSwitchTab) {
+      onSwitchTab(tab);
+    } else {
+      onScrollToSection('portfolio-section');
+    }
   };
 
   return (
@@ -38,12 +49,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenContact, onScrollToSection
         </a>
 
         {/* Clean, Simple Navigation */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-300">
+        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-zinc-300">
           <button
-            onClick={() => handleNavClick('portfolio-section')}
+            onClick={() => handleTabClick('long')}
             className="hover:text-amber-400 transition-colors cursor-pointer"
           >
-            Showcase
+            Long-Form Videos
+          </button>
+          <button
+            onClick={() => handleTabClick('vertical')}
+            className="hover:text-amber-400 transition-colors cursor-pointer"
+          >
+            Vertical Shorts
           </button>
           <button
             onClick={() => handleNavClick('reviews-section')}
@@ -88,12 +105,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenContact, onScrollToSection
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-white/10 bg-[#0e0e12] px-4 py-5 space-y-3">
+        <div className="md:hidden border-b border-white/10 bg-[#0e0e12] px-4 py-5 space-y-2">
           <button
-            onClick={() => handleNavClick('portfolio-section')}
+            onClick={() => handleTabClick('long')}
             className="w-full text-left py-2.5 px-3 rounded-lg text-sm font-medium text-zinc-300 hover:text-white hover:bg-white/5"
           >
-            Showcase
+            Long-Form Videos
+          </button>
+          <button
+            onClick={() => handleTabClick('vertical')}
+            className="w-full text-left py-2.5 px-3 rounded-lg text-sm font-medium text-zinc-300 hover:text-white hover:bg-white/5"
+          >
+            Vertical Shorts & Reels
           </button>
           <button
             onClick={() => handleNavClick('reviews-section')}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header.tsx';
 import { HeroSection } from './components/HeroSection.tsx';
 import { ReviewsMarquee } from './components/ReviewsMarquee.tsx';
@@ -15,11 +15,59 @@ export default function App() {
   const [selectedShortProject, setSelectedShortProject] = useState<ShortFormProject | null>(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
 
+  // Initialize portfolio tab from URL parameter (?type=shorts or ?type=long or hash #shorts / #long)
+  const [portfolioTab, setPortfolioTab] = useState<'long' | 'vertical'>(() => {
+    if (typeof window === 'undefined') return 'long';
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const typeParam = params.get('type') || params.get('view') || params.get('tab');
+      if (typeParam) {
+        if (['shorts', 'short', 'vertical', 'reels', 'reel', 'tiktok'].includes(typeParam.toLowerCase())) {
+          return 'vertical';
+        }
+        if (['long', 'documentary', 'documentaries', 'youtube'].includes(typeParam.toLowerCase())) {
+          return 'long';
+        }
+      }
+      const hash = window.location.hash.toLowerCase();
+      if (hash.includes('short') || hash.includes('vertical') || hash.includes('reel')) {
+        return 'vertical';
+      }
+    } catch {}
+    return 'long';
+  });
+
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  // If client lands with ?type=shorts or ?type=long or #portfolio-section, auto-scroll directly to the portfolio
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const typeParam = params.get('type') || params.get('view') || params.get('tab');
+      const hash = window.location.hash.toLowerCase();
+      if (typeParam || hash.includes('short') || hash.includes('vertical') || hash.includes('long') || hash.includes('portfolio')) {
+        const timer = setTimeout(() => {
+          scrollToSection('portfolio-section');
+        }, 350);
+        return () => clearTimeout(timer);
+      }
+    } catch {}
+  }, []);
+
+  const handleTabSwitch = (tab: 'long' | 'vertical') => {
+    setPortfolioTab(tab);
+    scrollToSection('portfolio-section');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('type', tab === 'vertical' ? 'shorts' : 'long');
+      url.hash = 'portfolio-section';
+      window.history.replaceState(null, '', url.toString());
+    } catch {}
   };
 
   return (
@@ -28,6 +76,7 @@ export default function App() {
       <Header
         onOpenContact={() => setIsContactOpen(true)}
         onScrollToSection={scrollToSection}
+        onSwitchTab={handleTabSwitch}
       />
 
       <main className="flex-1">
@@ -42,6 +91,16 @@ export default function App() {
 
         {/* Unified, clean Portfolio Showcase (YouTube Long-form & Vertical Reels) */}
         <PortfolioShowcase
+          activeTab={portfolioTab}
+          onTabChange={(tab) => {
+            setPortfolioTab(tab);
+            try {
+              const url = new URL(window.location.href);
+              url.searchParams.set('type', tab === 'vertical' ? 'shorts' : 'long');
+              url.hash = 'portfolio-section';
+              window.history.replaceState(null, '', url.toString());
+            } catch {}
+          }}
           onSelectLong={(project) => setSelectedLongProject(project)}
           onSelectShort={(short) => setSelectedShortProject(short)}
         />

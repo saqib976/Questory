@@ -35,30 +35,28 @@ h1, h2, h3, .font-display {
   background: #3f3f46;
 }
 
-/* Continuous Horizontal Marquee */
+/* Continuous Horizontal Marquee - 100% Seamless & Infinite (Zero Flicker) */
 @keyframes marquee-scroll {
-  0% {
+  from {
     transform: translateX(0);
   }
-  100% {
-    transform: translateX(-50%);
+  to {
+    transform: translateX(-100%);
   }
 }
 
-.animate-marquee-continuous {
-  display: flex;
-  width: max-content;
-  animation: marquee-scroll 42s linear infinite;
+.animate-marquee-track {
+  animation: marquee-scroll 55s linear infinite;
   will-change: transform;
 }
 
-.animate-marquee-continuous:hover {
+/* Pause whole marquee on container hover */
+.marquee-container:hover .animate-marquee-track {
   animation-play-state: paused;
 }
 
-/* Slower scroll for high-density screens */
 @media (min-width: 1024px) {
-  .animate-marquee-continuous {
-    animation-duration: 48s;
+  .animate-marquee-track {
+    animation-duration: 65s;
   }
 }

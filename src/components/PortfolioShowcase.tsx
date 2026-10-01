@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Film, Smartphone, Play, Clock, Sparkles, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Film, Smartphone, Play, Clock, Sparkles, ChevronLeft, ChevronRight, Zap, Copy, Check } from 'lucide-react';
 import {
   LONG_FORM_PROJECTS,
   SHORT_FORM_PROJECTS,
@@ -11,15 +11,41 @@ import { triggerHaptic } from '../utils/haptics.ts';
 interface PortfolioShowcaseProps {
   onSelectLong: (project: LongFormProject) => void;
   onSelectShort: (short: ShortFormProject) => void;
+  activeTab?: 'long' | 'vertical';
+  onTabChange?: (tab: 'long' | 'vertical') => void;
 }
 
 export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
   onSelectLong,
   onSelectShort,
+  activeTab: propActiveTab,
+  onTabChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<'long' | 'vertical'>('long');
+  const [internalTab, setInternalTab] = useState<'long' | 'vertical'>(() => {
+    if (typeof window === 'undefined') return 'long';
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const typeParam = params.get('type') || params.get('view') || params.get('tab');
+      if (typeParam) {
+        if (['shorts', 'short', 'vertical', 'reels', 'reel', 'tiktok'].includes(typeParam.toLowerCase())) {
+          return 'vertical';
+        }
+        if (['long', 'documentary', 'documentaries', 'youtube'].includes(typeParam.toLowerCase())) {
+          return 'long';
+        }
+      }
+      const hash = window.location.hash.toLowerCase();
+      if (hash.includes('short') || hash.includes('vertical') || hash.includes('reel')) {
+        return 'vertical';
+      }
+    } catch {}
+    return 'long';
+  });
+
+  const activeTab = propActiveTab !== undefined ? propActiveTab : internalTab;
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [shortIndex, setShortIndex] = useState(0);
+  const [copiedTab, setCopiedTab] = useState<'long' | 'vertical' | null>(null);
 
   // Swipe & Drag Gesture Tracking (with strict vertical scroll pass-through)
   const touchStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -27,13 +53,40 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
   const isMouseDown = useRef(false);
   const wasDragAction = useRef(false);
 
+  // Listen for browser navigation (back/forward)
+  useEffect(() => {
+    const handleUrlChange = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const typeParam = params.get('type') || params.get('view') || params.get('tab');
+        const hash = window.location.hash.toLowerCase();
+        let target: 'long' | 'vertical' = 'long';
+        if (typeParam) {
+          if (['shorts', 'short', 'vertical', 'reels', 'reel', 'tiktok'].includes(typeParam.toLowerCase())) {
+            target = 'vertical';
+          }
+        } else if (hash.includes('short') || hash.includes('vertical') || hash.includes('reel')) {
+          target = 'vertical';
+        }
+        setInternalTab(target);
+        if (onTabChange) onTabChange(target);
+      } catch {}
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, [onTabChange]);
+
   // Categories
   const longCategories = [
     { id: 'all', label: 'All Projects' },
     { id: 'faceless', label: 'Documentaries' },
     { id: 'motion-graphics', label: 'Motion Graphics' },
-    { id: 'retention', label: 'High Retention' },
-    { id: 'podcasts', label: 'Podcasts' },
+    { id: 'talking-head', label: 'Talking Head' },
   ];
 
   const shortCategories = [
@@ -56,9 +109,29 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
 
   const handleTabChange = (tab: 'long' | 'vertical') => {
     triggerHaptic('medium');
-    setActiveTab(tab);
+    setInternalTab(tab);
+    if (onTabChange) {
+      onTabChange(tab);
+    }
     setCategoryFilter('all');
     setShortIndex(0);
+
+    // Update URL query & hash seamlessly so it can be copied directly
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('type', tab === 'vertical' ? 'shorts' : 'long');
+      url.hash = 'portfolio-section';
+      window.history.replaceState(null, '', url.toString());
+    } catch {}
+  };
+
+  const handleCopyClientLink = (tab: 'long' | 'vertical') => {
+    triggerHaptic('success');
+    const baseUrl = window.location.origin + window.location.pathname;
+    const link = `${baseUrl}?type=${tab === 'vertical' ? 'shorts' : 'long'}#portfolio-section`;
+    navigator.clipboard.writeText(link);
+    setCopiedTab(tab);
+    setTimeout(() => setCopiedTab(null), 3000);
   };
 
   const handlePrevShort = () => {
@@ -172,30 +245,53 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
             </p>
           </div>
 
-          {/* Format Toggle */}
-          <div className="inline-flex p-1 bg-[#141418] rounded-2xl border border-white/10 self-start md:self-auto shadow-inner">
-            <button
-              onClick={() => handleTabChange('long')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'long'
-                  ? 'bg-amber-400 text-black shadow-md shadow-amber-500/20'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Film className="w-4 h-4" />
-              <span>Long-Form YouTube</span>
-            </button>
+          {/* Format Toggle & Direct Client Share Links */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 self-start md:self-auto">
+            <div className="inline-flex p-1 bg-[#141418] rounded-2xl border border-white/10 shadow-inner">
+              <button
+                onClick={() => handleTabChange('long')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'long'
+                    ? 'bg-amber-400 text-black shadow-md shadow-amber-500/20'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Film className="w-4 h-4" />
+                <span>Long-Form YouTube</span>
+              </button>
 
+              <button
+                onClick={() => handleTabChange('vertical')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'vertical'
+                    ? 'bg-amber-400 text-black shadow-md shadow-amber-500/20'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>Vertical Reels & Shorts</span>
+              </button>
+            </div>
+
+            {/* Quick Share Link for Client */}
             <button
-              onClick={() => handleTabChange('vertical')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'vertical'
-                  ? 'bg-amber-400 text-black shadow-md shadow-amber-500/20'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
+              onClick={() => handleCopyClientLink(activeTab)}
+              title={activeTab === 'long' ? 'Copy dedicated Long-Form link to send to clients' : 'Copy dedicated Vertical Shorts link to send to clients'}
+              className="px-3.5 py-2.5 rounded-xl bg-[#141418] hover:bg-[#1a1a22] border border-white/10 hover:border-amber-400/40 text-xs font-semibold text-zinc-300 hover:text-amber-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm group"
             >
-              <Smartphone className="w-4 h-4" />
-              <span>Vertical Reels & Shorts</span>
+              {copiedTab === activeTab ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-bold">
+                    {activeTab === 'long' ? 'Long-Form Link Copied!' : 'Shorts Link Copied!'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <span>Copy Client Link</span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -243,6 +339,11 @@ export const PortfolioShowcase: React.FC<PortfolioShowcaseProps> = ({
                     src={project.thumbnail}
                     alt={project.title}
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      if (project.thumbnail.includes('maxresdefault.jpg')) {
+                        e.currentTarget.src = project.thumbnail.replace('maxresdefault.jpg', 'hqdefault.jpg');
+                      }
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />

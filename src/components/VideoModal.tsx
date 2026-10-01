@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Play, Clock, Eye, TrendingUp, CheckCircle, ArrowRight, ExternalLink } from 'lucide-react';
+import { X, Play, Clock, Eye, TrendingUp, CheckCircle, ArrowRight } from 'lucide-react';
 import { LongFormProject } from '../data/portfolioData.ts';
 import { triggerHaptic } from '../utils/haptics.ts';
 import { getEmbedUrl, isDirectVideoFile } from '../utils/videoHelpers.ts';
@@ -98,21 +98,10 @@ export const VideoModal: React.FC<VideoModalProps> = ({
 
           {/* Project Details */}
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div className="mb-3">
               <h2 className="font-display text-xl sm:text-2xl font-bold text-white">
                 {project.title}
               </h2>
-              {project.videoUrl && (
-                <a
-                  href={project.videoUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-medium shrink-0"
-                >
-                  <span>Open Video Source</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
             </div>
 
             <p className="text-sm text-zinc-300 leading-relaxed mb-6">

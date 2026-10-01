@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Eye, TrendingUp, Award, ArrowDown, Sparkles, Camera, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye, TrendingUp, Award, ArrowDown, Sparkles } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics.ts';
 
 interface HeroSectionProps {
@@ -11,45 +11,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onOpenContact,
   onScrollToPortfolio,
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   // Check if user has uploaded their exact original photo
-  const [customAvatar, setCustomAvatar] = useState<string | null>(() => {
+  const [customAvatar] = useState<string | null>(() => {
     try {
-      return localStorage.getItem('questory_saqib_photo');
+      return localStorage.getItem('questory_saqib_photo_v2') || localStorage.getItem('questory_saqib_photo');
     } catch {
       return null;
     }
   });
 
-  // Default fallback paths
-  const userUploadedOriginal = '/file_0000000033548211b191642797ebdcb7.png';
+  // Default portrait paths
+  const defaultPortrait = '/images/saqib_portrait.jpg';
   const publicPortrait = '/saqib_portrait.jpg';
-  const [avatarSrc, setAvatarSrc] = useState(userUploadedOriginal);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-
-  // Handle direct client-side photo placement (zero compression, zero alteration)
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      triggerHaptic('success');
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) {
-          setCustomAvatar(result);
-          try {
-            localStorage.setItem('questory_saqib_photo', result);
-          } catch (err) {
-            console.error('Storage full', err);
-          }
-          setUploadSuccess(true);
-          setTimeout(() => setUploadSuccess(false), 3000);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const [avatarSrc, setAvatarSrc] = useState(defaultPortrait);
 
   const activeImageSrc = customAvatar || avatarSrc;
 
@@ -57,15 +31,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     <section className="relative pt-12 pb-16 md:pt-20 md:pb-20 overflow-hidden border-b border-white/5">
       {/* Subtle ambient lighting */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[300px] bg-amber-500/10 blur-[130px] rounded-full pointer-events-none -z-10" />
-
-      {/* Hidden File Input for direct photo placement */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
-        accept="image/*"
-        className="hidden"
-      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
@@ -90,31 +55,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
 
-                {/* Direct Upload / Place Photo Overlay Trigger */}
-                <button
-                  onClick={() => {
-                    triggerHaptic('light');
-                    fileInputRef.current?.click();
-                  }}
-                  title="Click to place your exact photo directly"
-                  aria-label="Upload original photo"
-                  className="absolute top-3 right-3 px-2.5 py-1.5 rounded-lg bg-black/80 hover:bg-amber-400 hover:text-black text-zinc-300 text-xs font-medium border border-white/15 backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-lg opacity-80 hover:opacity-100"
-                >
-                  {uploadSuccess ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400 font-bold">Updated</span>
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-3.5 h-3.5" />
-                      <span>{customAvatar ? 'Change Photo' : 'Place Original Photo'}</span>
-                    </>
-                  )}
-                </button>
-
                 {/* Permanent Name & Ownership Badge directly on image */}
-                <div className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-[#09090b]/90 backdrop-blur-md border border-white/15 shadow-xl text-left">
+                <div 
+                  title="Saqib · Questory"
+                  className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-[#09090b]/90 backdrop-blur-md border border-white/15 shadow-xl text-left select-none"
+                >
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="font-display font-extrabold text-white text-base sm:text-lg tracking-tight flex items-center gap-1.5">
